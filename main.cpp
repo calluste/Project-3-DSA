@@ -134,7 +134,7 @@ int main()
                     title.setFillColor(sf::Color::Black);
                     title.setPosition(300, 50);
 
-
+                    //these are the top five answers they are just placeholders rn
                     std::string name1 = "Billy Jean";
                     std::string name2 = "Thriller";
                     std::string name3 = "GLO in A GLE";
