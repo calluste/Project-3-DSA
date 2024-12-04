@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 #include "Songs.h"
+#include <string>
+#include <memory>
 
 std::vector<Songs> loadSongs(const std::string& fileName) {
     std::vector<Songs> songs;
@@ -36,6 +38,71 @@ std::vector<Songs> loadSongs(const std::string& fileName) {
 
 }
 
+//makes node for trie
+struct TrieNode {
+    bool isEndOfWord;
+    std::vector<std::pair<std::string, std::string>> songs; // Pair of <Author, Song Name>
+    std::shared_ptr<TrieNode> children[26];
+
+    TrieNode() : isEndOfWord(false) {
+        for (auto &child : children)
+            child = nullptr;
+    }
+};
+
+//makes lowercase
+int charToIndex(char c) {
+    return tolower(c) - 'a';
+}
+
+//beginning of trie class
+class Trie {
+private:
+    std::shared_ptr<TrieNode> root;
+
+public:
+    Trie() {
+        root = std::make_shared<TrieNode>();
+    }
+
+    void insert(const std::string &songName, const std::string &author) {
+        auto node = root;
+        for (char c : songName) {
+            if (!isalpha(c))
+                continue;
+            int index = charToIndex(c);
+            if (!node->children[index])
+                node->children[index] = std::make_shared<TrieNode>();
+            node = node->children[index];
+        }
+        node->isEndOfWord = true;
+        node->songs.push_back({author, songName});
+    }
+
+    void search(const std::string &query, std::vector<std::pair<std::string, std::string>> &results) {
+        auto node = root;
+        for (char c : query) {
+            if (!isalpha(c))
+                continue;
+            int index = charToIndex(c);
+            if (!node->children[index])
+                return;
+            node = node->children[index];
+        }
+        collectAllSongs(node, results);
+    }
+private:
+    void collectAllSongs(std::shared_ptr<TrieNode> node, std::vector<std::pair<std::string, std::string>> &results) {
+        if (node->isEndOfWord) {
+            for (const auto &song : node->songs)
+                results.push_back(song);
+        }
+        for (int i = 0; i < 26; ++i) {
+            if (node->children[i])
+                collectAllSongs(node->children[i], results);
+        }
+    }
+};
 
 int main()
 {
@@ -49,6 +116,11 @@ int main()
     // }
 
 
+    //puts vector of songs into trie
+    Trie songTrie;
+    for (const auto &song : songs) {
+        songTrie.insert(song.name, song.author);
+    }
 
 
     // create the window
@@ -119,6 +191,39 @@ int main()
             }
             if (event.type == sf::Event::TextEntered) {
                 if (event.key.code == sf::Keyboard::Enter or event.key.code == 10) {
+
+                    //stuff for trie
+
+                    //vector of the results of search
+                    std::vector<std::pair<std::string, std::string>> results;
+                    songTrie.search(input, results);
+
+                    //vector of just top 5
+                    std::vector<std::string> topFiveSongs;
+
+                    if (results.empty()) {
+                        //if no songs found
+                        topFiveSongs.push_back("No songs found for the term \"" + input + "\".");
+                    } else {
+                        //sets top five results in top five vector
+                        int count = 0;
+                        for (const auto &song : results) {
+                            std::string formattedString = song.second + " by " + song.first;
+                            topFiveSongs.push_back(formattedString);
+                            if (++count == 5)
+                                break;
+                        }
+                    }
+
+                    //sets the five name strings to the top five results blank string if not enough for top5
+                    std::string name1 = (topFiveSongs.size() > 0) ? topFiveSongs[0] : "";
+                    std::string name2 = (topFiveSongs.size() > 1) ? topFiveSongs[1] : "";
+                    std::string name3 = (topFiveSongs.size() > 2) ? topFiveSongs[2] : "";
+                    std::string name4 = (topFiveSongs.size() > 3) ? topFiveSongs[3] : "";
+                    std::string name5 = (topFiveSongs.size() > 4) ? topFiveSongs[4] : "";
+
+
+                    //beginning of stuff for SFML
                     sf::RenderWindow window2(sf::VideoMode(800, 600), "Song Founderer");
 
                     sf::Texture background2;
@@ -133,14 +238,6 @@ int main()
                     sf::Text title("Songs like: ", font, 30);
                     title.setFillColor(sf::Color::Black);
                     title.setPosition(300, 50);
-
-                    //these are the top five answers they are just placeholders rn
-                    std::string name1 = "Billy Jean";
-                    std::string name2 = "Thriller";
-                    std::string name3 = "GLO in A GLE";
-                    std::string name4 = "PaperLong";
-                    std::string name5 = "WAP";
-
 
                     sf::Text num1("1.", font, 30);
                     num1.setFillColor(sf::Color::Black);
