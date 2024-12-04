@@ -6,6 +6,13 @@
 #include "Songs.h"
 #include <string>
 #include <memory>
+#include <unordered_map>
+
+
+/*
+ *In order to use the standard library map you must uncomment the map parts
+ *and then comment out the trie parts
+ */
 
 std::vector<Songs> loadSongs(const std::string& fileName) {
     std::vector<Songs> songs;
@@ -50,10 +57,28 @@ struct TrieNode {
     }
 };
 
-//makes lowercase
+//makes lowercase for trie
 int charToIndex(char c) {
     return tolower(c) - 'a';
 }
+
+/* Uncomment for map stuff
+//makes lowercase for map
+std::string toLower(const std::string &str) {
+    std::string lowerStr;
+    for (char c : str) {
+        lowerStr += std::tolower(c);
+    }
+    return lowerStr;
+}
+
+//checks if str starts with prefix
+bool startsWith(const std::string &str, const std::string &prefix) {
+    std::string lowerStr = toLower(str);
+    std::string lowerPrefix = toLower(prefix);
+    return lowerStr.find(lowerPrefix) == 0;
+}
+*/
 
 //beginning of trie class
 class Trie {
@@ -122,6 +147,15 @@ int main()
         songTrie.insert(song.name, song.author);
     }
 
+    /* Uncomment for map stuff
+    //creates unordered map and key is the song name in lowercase
+    std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> songMap;
+
+    for (const auto &song : songs) {
+        std::string lowerName = toLower(song.name);
+        songMap[lowerName].emplace_back(song.author, song.name);
+    }
+    */
 
     // create the window
     sf::RenderWindow window(sf::VideoMode(800, 600), "Song Searcher");
@@ -196,11 +230,24 @@ int main()
 
                     //vector of the results of search
                     std::vector<std::pair<std::string, std::string>> results;
-                    songTrie.search(input, results);
 
                     //vector of just top 5
                     std::vector<std::string> topFiveSongs;
 
+                    /* Uncomment for map stuff
+                    //stuff for map
+                    std::string lowerInput = toLower(input);
+                    for (const auto& pair : songMap) {
+                        if (startsWith(pair.first, lowerInput)) {
+                            for (const auto& songInfo : pair.second) {
+                                results.push_back(songInfo);
+                            }
+                        }
+                    }
+                    */
+
+
+                    songTrie.search(input, results);
                     if (results.empty()) {
                         //if no songs found
                         topFiveSongs.push_back("No songs found for the term \"" + input + "\".");
